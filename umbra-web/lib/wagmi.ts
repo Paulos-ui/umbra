@@ -1,39 +1,27 @@
-import { connectorsForWallets } from "@rainbow-me/rainbowkit";
-import {
-  metaMaskWallet,
-  rainbowWallet,
-  walletConnectWallet,
-  injectedWallet,
-} from "@rainbow-me/rainbowkit/wallets";
 import { createConfig, http } from "wagmi";
 import { sepolia } from "wagmi/chains";
+import { injected, walletConnect } from "wagmi/connectors";
 
-const projectId = process.env.NEXT_PUBLIC_WC_PROJECT_ID ?? "umbra-dev";
+const projectId = process.env.NEXT_PUBLIC_WC_PROJECT_ID ?? "";
 
 /**
- * Explicit wallet list instead of RainbowKit's getDefaultConfig.
+ * Native wagmi connectors — no RainbowKit.
  *
- * getDefaultConfig bundles Coinbase Wallet, which pulls in @base-org/account →
- * @coinbase/cdp-sdk. That package resolves to a Node build (index.node.js) and
- * breaks the browser bundle. We only need injected + WalletConnect wallets here.
+ * `injected()` covers MetaMask, Rabby, Brave and any EIP-1193 browser wallet.
+ * WalletConnect is only registered when a project id is present, so a missing
+ * env var degrades to injected-only instead of throwing at runtime.
+ * The Coinbase connector is deliberately omitted: it pulls @coinbase/cdp-sdk,
+ * whose optional @x402/* peers break the production bundle.
  */
-const connectors = connectorsForWallets(
-  [
-    {
-      groupName: "Recommended",
-      wallets: [metaMaskWallet, rainbowWallet, walletConnectWallet, injectedWallet],
-    },
-  ],
-  { appName: "Umbra", projectId }
-);
-
 export const wagmiConfig = createConfig({
-  connectors,
   chains: [sepolia],
+  connectors: [
+    injected(),
+    ...(projectId ? [walletConnect({ projectId, showQrModal: true })] : []),
+  ],
   transports: {
     [sepolia.id]: http(
-      process.env.NEXT_PUBLIC_SEPOLIA_RPC ??
-        "https://ethereum-sepolia-rpc.publicnode.com"
+      process.env.NEXT_PUBLIC_SEPOLIA_RPC ?? "https://ethereum-sepolia-rpc.publicnode.com"
     ),
   },
   ssr: true,

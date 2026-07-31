@@ -6,9 +6,10 @@ const nextConfig = {
     if (isServer) {
       config.externals.push("pino-pretty", "lokijs", "encoding");
     }
-    // RainbowKit's barrel pulls wagmi's Coinbase/Base connectors, which drag in
-    // @coinbase/cdp-sdk and its optional @x402/* peers that aren't installed.
-    // We never use those connectors, so stub the subtree at its root.
+    // The `wagmi/connectors` barrel exports every connector, including
+    // baseAccount -> @base-org/account -> @coinbase/cdp-sdk, whose optional
+    // @x402/* peers aren't installed. We only use injected + walletConnect,
+    // so stub that subtree. Required even without RainbowKit.
     config.resolve.alias = {
       ...config.resolve.alias,
       "@coinbase/cdp-sdk": false,

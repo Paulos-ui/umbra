@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useAccount, usePublicClient } from "wagmi";
-import { ConnectButton } from "@rainbow-me/rainbowkit";
+import { ConnectWallet } from "@/components/ConnectWallet";
 import { formatUnits } from "viem";
 import { Nav } from "@/components/Nav";
 import { useUmbra } from "@/hooks/useUmbra";
@@ -90,7 +90,7 @@ export default function Trade() {
       {!isConnected ? (
         <div className="panel p-8 max-w-[460px]">
           <p className="text-haze mb-5 text-sm">Connect a wallet on Ethereum Sepolia to begin.</p>
-          <ConnectButton />
+          <ConnectWallet />
         </div>
       ) : (
         <div className="grid lg:grid-cols-[1.2fr_1fr] gap-6">
