@@ -1,0 +1,27 @@
+# secrets — never commit
+.env
+.env.local
+.env*.local
+.env.example
+.env*.example
+
+# dependencies
+node_modules/
+.pnpm-store/
+
+# next.js
+.next/
+out/
+build/
+next-env.d.ts
+
+# hardhat
+artifacts/
+cache/
+typechain-types/
+ignition/deployments/
+
+# misc
+.DS_Store
+*.log
+.vercel

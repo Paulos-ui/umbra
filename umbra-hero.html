@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Umbra — You are the light</title>
+<meta name="description" content="Umbra: a confidential dark pool for Uniswap. Move your cursor to rake light across the umbra. Connect your wallet to enter." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --umbra:#16121C; --penumbra:#241C2E; --penumbra-2:#2E2539;
+    --corona:#E8B04B; --corona-soft:#f0c987; --ember:#C6613F;
+    --bone:#EFE7D6; --bone-dim:#d8cfbd; --haze:#A99BB5; --haze-dim:#7d7188;
+    --line:rgba(233,231,214,0.12);
+    --ff-display:'Fraunces',serif; --ff-body:'Inter',system-ui,sans-serif; --ff-mono:'JetBrains Mono',ui-monospace,monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%}
+  body{background:var(--umbra);color:var(--bone);font-family:var(--ff-body);overflow:hidden;-webkit-font-smoothing:antialiased}
+  ::selection{background:var(--corona);color:var(--umbra)}
+  #scene{position:fixed;inset:0;z-index:0;display:block}
+  .grain{position:fixed;inset:0;z-index:1;pointer-events:none;opacity:.05;mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+
+  /* NAV */
+  nav{position:fixed;top:0;left:0;right:0;z-index:20;display:flex;align-items:center;justify-content:space-between;
+    padding:22px clamp(20px,5vw,54px)}
+  .brand{font-family:var(--ff-display);font-size:22px;letter-spacing:.02em}
+  .brand b{font-weight:600}
+  .brand .glyph{display:inline-block;width:15px;height:15px;border-radius:50%;
+    background:radial-gradient(circle at 32% 32%,var(--corona),#8a6a24 60%,#3a2d12);vertical-align:-1px;margin-right:9px;
+    box-shadow:0 0 18px rgba(232,176,75,.5)}
+
+  /* buttons */
+  .btn{font-family:var(--ff-mono);font-size:12.5px;letter-spacing:.06em;text-transform:uppercase;
+    border:none;cursor:pointer;border-radius:100px;padding:13px 22px;display:inline-flex;align-items:center;gap:10px;
+    transition:transform .5s cubic-bezier(.2,.8,.2,1),background .3s,color .3s,border-color .3s}
+  .btn-primary{background:var(--corona);color:var(--umbra)}
+  .btn-ghost{background:rgba(36,28,46,.5);color:var(--bone);border:1px solid var(--line);backdrop-filter:blur(8px)}
+  .btn-ghost:hover{border-color:rgba(232,176,75,.45);color:#fff}
+  .btn .arrow{transition:transform .4s}
+  .btn:hover .arrow{transform:translateX(4px)}
+  .btn:disabled{opacity:.5;cursor:default}
+
+  /* HERO */
+  .hero{position:relative;z-index:10;height:100svh;display:flex;flex-direction:column;justify-content:center;
+    padding:0 clamp(20px,5vw,54px);pointer-events:none}
+  .hero > *{pointer-events:auto}
+  .eyebrow{font-family:var(--ff-mono);font-size:12px;letter-spacing:.28em;text-transform:uppercase;color:var(--corona);
+    display:flex;align-items:center;gap:12px;margin-bottom:22px}
+  .eyebrow .pulse{width:7px;height:7px;border-radius:50%;background:var(--corona);box-shadow:0 0 14px var(--corona);animation:pulse 2.6s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:.4;transform:scale(.8)}50%{opacity:1;transform:scale(1.15)}}
+  h1{font-family:var(--ff-display);font-weight:500;font-size:clamp(64px,15vw,220px);line-height:.9;letter-spacing:-.04em;
+    text-shadow:0 0 80px rgba(22,18,28,.8)}
+  .sub{max-width:500px;margin-top:26px;font-size:clamp(16px,2.1vw,20px);color:var(--bone-dim);line-height:1.55}
+  .sub b{color:var(--bone);font-weight:500}
+  .hero-actions{margin-top:38px;display:flex;flex-wrap:wrap;gap:14px;align-items:center}
+  .hint{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);z-index:12;
+    font-family:var(--ff-mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--haze-dim);
+    display:flex;align-items:center;gap:14px;transition:opacity .6s;text-align:center}
+  .hint .k{color:var(--haze);border:1px solid var(--line);border-radius:6px;padding:3px 7px}
+
+  /* WALLET STATUS PILL */
+  .wallet{position:fixed;top:18px;right:clamp(20px,5vw,54px);z-index:30}
+  .wpill{display:none;align-items:center;gap:12px;font-family:var(--ff-mono);font-size:12px;
+    background:rgba(36,28,46,.6);border:1px solid var(--line);border-radius:100px;padding:9px 9px 9px 15px;backdrop-filter:blur(10px)}
+  .wpill.show{display:inline-flex}
+  .wpill .net{display:inline-flex;align-items:center;gap:7px;color:var(--haze)}
+  .wpill .net .dot{width:7px;height:7px;border-radius:50%}
+  .net.ok .dot{background:#7fc99a;box-shadow:0 0 10px #7fc99a}
+  .net.bad .dot{background:var(--ember);box-shadow:0 0 10px var(--ember)}
+  .wpill .addr{color:var(--bone);background:rgba(22,18,28,.6);border-radius:100px;padding:6px 12px}
+  .wpill .switch{font-size:11px;letter-spacing:.05em;text-transform:uppercase;background:var(--ember);color:#fff;
+    border:none;border-radius:100px;padding:6px 12px;cursor:pointer}
+  .toast{position:fixed;top:70px;right:clamp(20px,5vw,54px);z-index:40;font-family:var(--ff-mono);font-size:12px;
+    background:var(--penumbra);border:1px solid var(--line);border-radius:12px;padding:12px 16px;color:var(--bone-dim);
+    max-width:280px;opacity:0;transform:translateY(-8px);transition:.4s;pointer-events:none}
+  .toast.show{opacity:1;transform:translateY(0)}
+
+  @media (prefers-reduced-motion:reduce){.eyebrow .pulse{animation:none}}
+  @media (max-width:640px){ .hint{display:none} h1{font-size:22vw} }
+</style>
+</head>
+<body>
+<canvas id="scene"></canvas>
+<div class="grain"></div>
+
+<nav>
+  <div class="brand"><span class="glyph"></span><b>UMBRA</b></div>
+  <button class="btn btn-ghost" id="nav-connect">Connect wallet</button>
+</nav>
+
+<div class="wallet"><div class="wpill" id="wpill">
+  <span class="net" id="net"><span class="dot"></span><span id="net-name">—</span></span>
+  <button class="switch" id="switch" style="display:none">Switch to Sepolia</button>
+  <span class="addr" id="addr">0x…</span>
+</div></div>
+<div class="toast" id="toast"></div>
+
+<section class="hero">
+  <div class="eyebrow"><span class="pulse"></span>Confidential dark pool · built on iExec Nox</div>
+  <h1>Umbra</h1>
+  <p class="sub">A dark pool for Uniswap. Your orders trade in shadow — the market only sees the eclipse. <b>Move your cursor: you are the light.</b></p>
+  <div class="hero-actions">
+    <button class="btn btn-primary" id="hero-connect">Connect wallet <span class="arrow">→</span></button>
+  </div>
+</section>
+
+<div class="hint" id="hint">
+  <span><span class="k">move</span> rake the light</span>
+  <span><span class="k">click</span> lock the reveal</span>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const REDUCE = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ============================================================
+   CURSOR-AS-LIGHT ECLIPSE
+   The umbra is a dark cratered sphere. The cursor is a real gold
+   point-light; the lit crescent (terminator) follows you.
+   Click locks the light — selective disclosure made physical.
+============================================================ */
+(function(){
+  if (typeof THREE === 'undefined') return;
+  const canvas = document.getElementById('scene');
+  const renderer = new THREE.WebGLRenderer({canvas, alpha:true, antialias:true});
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  const scene = new THREE.Scene();
+  const cam = new THREE.PerspectiveCamera(45, innerWidth/innerHeight, .1, 100);
+  cam.position.z = 5;
+
+  // --- procedural crater/normal detail so the moving light reveals texture ---
+  function noiseTexture(size){
+    const c = document.createElement('canvas'); c.width=c.height=size;
+    const x = c.getContext('2d');
+    const img = x.createImageData(size,size);
+    for (let i=0;i<size*size;i++){
+      // layered value noise-ish via random + smoothing bias
+      let v = 0; let amp=0.5, f=1;
+      for(let o=0;o<4;o++){ v += (Math.random())*amp; amp*=0.5; f*=2; }
+      v = Math.min(1, v);
+      const g = 120 + v*135;
+      img.data[i*4]=g; img.data[i*4+1]=g; img.data[i*4+2]=g; img.data[i*4+3]=255;
+    }
+    x.putImageData(img,0,0);
+    // soften
+    x.globalAlpha=0.5; x.filter='blur(1px)'; x.drawImage(c,0,0);
+    const t = new THREE.CanvasTexture(c); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.repeat.set(3,3);
+    return t;
+  }
+  const bump = noiseTexture(256);
+
+  // --- the umbra sphere ---
+  const sphere = new THREE.Mesh(
+    new THREE.SphereGeometry(1.55, 160, 160),
+    new THREE.MeshStandardMaterial({
+      color:0x2a2333, roughness:0.92, metalness:0.06,
+      bumpMap:bump, bumpScale:0.045,
+      emissive:0x0d0a13, emissiveIntensity:1.0
+    })
+  );
+  scene.add(sphere);
+
+  // --- corona: additive backlit ring ---
+  const corona = new THREE.Mesh(
+    new THREE.RingGeometry(1.58, 2.9, 160),
+    new THREE.MeshBasicMaterial({color:0xE8B04B, transparent:true, opacity:0.05, side:THREE.DoubleSide, blending:THREE.AdditiveBlending})
+  );
+  corona.position.z = -0.6; scene.add(corona);
+
+  // --- lights ---
+  const amb = new THREE.AmbientLight(0x140f1c, 0.22);        // deep shadow floor
+  scene.add(amb);
+  const rim = new THREE.DirectionalLight(0x3a2f4a, 0.35);    // cool shape from behind
+  rim.position.set(-5,-2,-4); scene.add(rim);
+  const key = new THREE.PointLight(0xE8B04B, 5.2, 22, 2.0);  // THE CURSOR LIGHT (gold)
+  key.position.set(3, 2, 3); scene.add(key);
+
+  // small glow sprite riding the light for a soft bloom
+  function glowSprite(){
+    const s=128,c=document.createElement('canvas');c.width=c.height=s;const g=c.getContext('2d');
+    const rad=g.createRadialGradient(s/2,s/2,0,s/2,s/2,s/2);
+    rad.addColorStop(0,'rgba(240,201,135,0.9)');rad.addColorStop(.4,'rgba(232,176,75,0.35)');rad.addColorStop(1,'rgba(232,176,75,0)');
+    g.fillStyle=rad;g.fillRect(0,0,s,s);
+    const tex=new THREE.CanvasTexture(c);
+    const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false}));
+    sp.scale.set(1.6,1.6,1); return sp;
+  }
+  const glow = glowSprite(); scene.add(glow);
+
+  // --- order particles (encrypted orders adrift) ---
+  const N = 220, pg = new THREE.BufferGeometry(), pos = new Float32Array(N*3);
+  const seed = [];
+  for (let i=0;i<N;i++){
+    const a=Math.random()*6.283, rad=2.3+Math.random()*3.4, y=(Math.random()-.5)*4.2;
+    pos[i*3]=Math.cos(a)*rad; pos[i*3+1]=y; pos[i*3+2]=Math.sin(a)*rad - 1.5;
+    seed.push(a);
+  }
+  pg.setAttribute('position', new THREE.BufferAttribute(pos,3));
+  const pMat = new THREE.PointsMaterial({color:0xA99BB5, size:0.03, transparent:true, opacity:0.55});
+  const pts = new THREE.Points(pg, pMat); scene.add(pts);
+
+  // --- cursor → light target ---
+  const target = new THREE.Vector3(3,2,3);
+  const cur = new THREE.Vector3(3,2,3);
+  let locked = false, lastMove = performance.now(), hasMoved = false;
+  const hintEl = document.getElementById('hint');
+
+  function setTarget(clientX, clientY){
+    const nx = (clientX/innerWidth)*2 - 1;
+    const ny = -((clientY/innerHeight)*2 - 1);
+    target.set(nx*4.2, ny*3.2, 2.6);
+    lastMove = performance.now(); hasMoved = true;
+    if (hintEl) hintEl.style.opacity = .35;
+  }
+  addEventListener('mousemove', e=>{ if(!locked) setTarget(e.clientX, e.clientY); });
+  addEventListener('touchmove', e=>{ if(e.touches[0]&&!locked) setTarget(e.touches[0].clientX, e.touches[0].clientY); }, {passive:true});
+  addEventListener('click', e=>{
+    if (e.target.closest('button')) return;   // don't hijack real buttons
+    locked = !locked;
+    document.body.style.cursor = locked ? 'crosshair' : 'default';
+    if (hintEl) hintEl.firstElementChild.nextElementSibling.style.color = locked ? 'var(--corona)' : '';
+  });
+
+  function resize(){ renderer.setSize(innerWidth, innerHeight); cam.aspect=innerWidth/innerHeight; cam.updateProjectionMatrix(); }
+  addEventListener('resize', resize); resize();
+
+  const clock = new THREE.Clock();
+  (function loop(){
+    requestAnimationFrame(loop);
+    const t = clock.getElapsedTime();
+
+    // idle auto-orbit of the light if the user hasn't moved recently (feels alive)
+    const idle = (performance.now() - lastMove) > 2600;
+    if ((idle || !hasMoved) && !locked && !REDUCE){
+      target.set(Math.cos(t*0.5)*3.4, Math.sin(t*0.38)*2.4, 2.6);
+      if (hintEl) hintEl.style.opacity = .85;
+    }
+    cur.lerp(target, REDUCE ? 1 : 0.075);
+    key.position.copy(cur);
+    glow.position.copy(cur);
+
+    // corona breathes; brightens as the light nears the sphere's limb
+    const limb = 1 - Math.min(1, Math.abs(cur.length() - 2.4)/2.2);
+    corona.material.opacity = 0.04 + limb*0.10;
+    corona.rotation.z = t*0.05;
+
+    sphere.rotation.y = t*0.04;
+    sphere.rotation.x = Math.sin(t*0.15)*0.05;
+
+    // particles: subtle drift + brighten those near the light
+    const arr = pg.attributes.position.array;
+    for (let i=0;i<N;i++){
+      arr[i*3+1] += Math.sin(t*0.6 + seed[i])*0.0009;
+    }
+    pg.attributes.position.needsUpdate = true;
+    pts.rotation.y = t*0.03;
+
+    renderer.render(scene, cam);
+  })();
+})();
+
+/* ============================================================
+   REAL WALLET CONNECTION (EIP-1193)
+============================================================ */
+(function(){
+  const SEPOLIA = '0xaa36a7';
+  const NAMES = {'0x1':'Ethereum','0xaa36a7':'Sepolia','0x89':'Polygon','0xa4b1':'Arbitrum','0x66eee':'Arb Sepolia'};
+  const wpill = document.getElementById('wpill');
+  const addrEl = document.getElementById('addr');
+  const netEl = document.getElementById('net');
+  const netName = document.getElementById('net-name');
+  const switchBtn = document.getElementById('switch');
+  const toastEl = document.getElementById('toast');
+  let toastT;
+  function toast(msg){ toastEl.textContent=msg; toastEl.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(()=>toastEl.classList.remove('show'),3400); }
+
+  function render(addr, chainId){
+    wpill.classList.add('show');
+    addrEl.textContent = addr.slice(0,6)+'…'+addr.slice(-4);
+    const ok = chainId === SEPOLIA;
+    netName.textContent = NAMES[chainId] || ('chain '+parseInt(chainId,16));
+    netEl.className = 'net ' + (ok ? 'ok' : 'bad');
+    switchBtn.style.display = ok ? 'none' : 'inline-block';
+    document.querySelectorAll('#nav-connect,#hero-connect').forEach(b=>{
+      b.textContent = ok ? 'Enter the pool' : 'Wrong network';
+      b.classList.toggle('btn-primary', ok);
+    });
+  }
+
+  async function connect(){
+    if (!window.ethereum){ toast('No wallet detected. Install MetaMask to continue.'); return; }
+    try{
+      const accts = await ethereum.request({method:'eth_requestAccounts'});
+      const chainId = await ethereum.request({method:'eth_chainId'});
+      render(accts[0], chainId);
+      if (chainId !== SEPOLIA) toast('Connected. Switch to Ethereum Sepolia to enter the pool.');
+      else toast('Connected to Sepolia. Ready.');
+    }catch(err){ toast(err && err.code===4001 ? 'Connection rejected.' : 'Could not connect.'); }
+  }
+
+  async function switchSepolia(){
+    try{ await ethereum.request({method:'wallet_switchEthereumChain', params:[{chainId:SEPOLIA}]}); }
+    catch(err){
+      if (err && err.code===4902){
+        try{
+          await ethereum.request({method:'wallet_addEthereumChain', params:[{
+            chainId:SEPOLIA, chainName:'Ethereum Sepolia',
+            nativeCurrency:{name:'Sepolia Ether',symbol:'ETH',decimals:18},
+            rpcUrls:['https://ethereum-sepolia-rpc.publicnode.com'],
+            blockExplorerUrls:['https://sepolia.etherscan.io']
+          }]});
+        }catch(e){ toast('Could not add Sepolia.'); }
+      } else { toast('Network switch cancelled.'); }
+    }
+  }
+
+  document.getElementById('nav-connect').addEventListener('click', connect);
+  document.getElementById('hero-connect').addEventListener('click', connect);
+  switchBtn.addEventListener('click', switchSepolia);
+
+  if (window.ethereum){
+    ethereum.on && ethereum.on('accountsChanged', a=>{ a.length ? location.reload() : wpill.classList.remove('show'); });
+    ethereum.on && ethereum.on('chainChanged', ()=>location.reload());
+    // reflect an already-authorized session
+    ethereum.request({method:'eth_accounts'}).then(a=>{ if(a.length){ ethereum.request({method:'eth_chainId'}).then(c=>render(a[0],c)); } });
+  }
+
+  // magnetic hover on buttons
+  if (!REDUCE) document.querySelectorAll('.btn').forEach(btn=>{
+    btn.addEventListener('mousemove', e=>{ const r=btn.getBoundingClientRect();
+      btn.style.transform=`translate(${(e.clientX-r.left-r.width/2)*.22}px,${(e.clientY-r.top-r.height/2)*.22}px)`; });
+    btn.addEventListener('mouseleave', ()=> btn.style.transform='translate(0,0)');
+  });
+})();
+</script>
+</body>
+</html>
