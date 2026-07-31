@@ -2,31 +2,18 @@
 const nextConfig = {
   reactStrictMode: true,
   transpilePackages: ["@iexec-nox/handle"],
-  serverExternalPackages: ["@coinbase/cdp-sdk", "@base-org/account"],
   webpack: (config, { isServer }) => {
-    if (!isServer) {
-      config.resolve.fallback = {
-        ...config.resolve.fallback,
-        fs: false,
-        net: false,
-        tls: false,
-        crypto: false,
-        os: false,
-        path: false,
-        stream: false,
-        child_process: false,
-        http: false,
-        https: false,
-        zlib: false,
-        readline: false,
-      };
+    if (isServer) {
+      config.externals.push("pino-pretty", "lokijs", "encoding");
     }
-    config.externals.push(
-      "pino-pretty",
-      "lokijs",
-      "encoding",
-      "@react-native-async-storage/async-storage"
-    );
+    // RainbowKit's barrel pulls wagmi's Coinbase/Base connectors, which drag in
+    // @coinbase/cdp-sdk and its optional @x402/* peers that aren't installed.
+    // We never use those connectors, so stub the subtree at its root.
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      "@coinbase/cdp-sdk": false,
+      "@base-org/account": false,
+    };
     return config;
   },
 };
