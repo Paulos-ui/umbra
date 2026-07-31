@@ -96,7 +96,7 @@ export function useUmbra() {
         const until = BigInt(Math.floor(Date.now() / 1000) + hours * 3600);
         const hash = await walletClient.writeContract({
           address: ADDRESSES.cUSDC, abi: cTokenAbi, functionName: "setOperator",
-          args: [ADDRESSES.batchRouter, until],
+          args: [ADDRESSES.batchRouter, Number(until)],
         });
         await wait(hash);
         push(`Router authorized for ${hours}h`);
