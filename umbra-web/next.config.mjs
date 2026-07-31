@@ -2,6 +2,7 @@
 const nextConfig = {
   reactStrictMode: true,
   transpilePackages: ["@iexec-nox/handle"],
+  serverExternalPackages: ["@coinbase/cdp-sdk", "@base-org/account"],
   webpack: (config, { isServer }) => {
     if (!isServer) {
       config.resolve.fallback = {
@@ -13,6 +14,11 @@ const nextConfig = {
         os: false,
         path: false,
         stream: false,
+        child_process: false,
+        http: false,
+        https: false,
+        zlib: false,
+        readline: false,
       };
     }
     config.externals.push(
