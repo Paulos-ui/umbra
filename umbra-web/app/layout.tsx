@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
-import { Fraunces, Inter, JetBrains_Mono } from "next/font/google";
 import { Providers } from "./providers";
-import "./globals.css";
 
-const fraunces = Fraunces({ subsets: ["latin"], variable: "--font-fraunces", weight: ["300", "400", "500", "600"] });
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
-const mono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono", weight: ["400", "500"] });
+// Self-hosted variable fonts from npm — no build-time fetch to Google Fonts,
+// so builds work offline and can't fail on a flaky connection.
+import "@fontsource-variable/fraunces";
+import "@fontsource-variable/inter";
+import "@fontsource-variable/jetbrains-mono";
+import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Umbra — Trade in shadow, settle in light",
@@ -15,7 +16,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${fraunces.variable} ${inter.variable} ${mono.variable}`}>
+    <html lang="en">
       <body className="font-body bg-umbra text-bone">
         <Providers>{children}</Providers>
         <div className="grain" />

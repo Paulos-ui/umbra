@@ -1,25 +1,34 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useWalletClient } from "wagmi";
+import { useAccount } from "wagmi";
+import { getWalletClient } from "wagmi/actions";
+import { sepolia } from "wagmi/chains";
+import { wagmiConfig } from "@/lib/wagmi";
 
 /**
- * Nox handle client — the bridge between the browser and confidential values.
+ * Nox handle client — the browser's bridge to confidential values.
  *
- *   encryptInput(value, 'uint256', contract) -> { handle, handleProof }
+ *   encryptInput(value, "uint256", contract) -> { handle, handleProof }
  *   decrypt(handle)                          -> { value }
+ *   publicDecrypt(handle)                    -> { value, decryptionProof }
  *
- * The SDK is imported dynamically so it never runs during SSR.
+ * Nox is live on Ethereum Sepolia (chainId 11155111), so createViemHandleClient
+ * resolves the gateway automatically from the wallet's chain.
+ *
+ * The SDK is imported dynamically so it never executes during SSR, and the
+ * wallet client is resolved via the action (not the hook) so a wrong-network
+ * wallet produces a clear failure instead of a silent undefined.
  */
 export function useNoxHandle() {
-  const { data: walletClient } = useWalletClient();
+  const { isConnected, chain } = useAccount();
   const [client, setClient] = useState<any>(null);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
-    if (!walletClient) {
+    if (!isConnected || chain?.id !== sepolia.id) {
       setClient(null);
       return;
     }
@@ -27,19 +36,19 @@ export function useNoxHandle() {
     setError(null);
     (async () => {
       try {
+        const wc = await getWalletClient(wagmiConfig, { chainId: sepolia.id });
+        if (!wc) throw new Error("wallet client unavailable");
         const { createViemHandleClient } = await import("@iexec-nox/handle");
-        const c = await createViemHandleClient(walletClient as any);
+        const c = await createViemHandleClient(wc as any);
         if (!cancelled) setClient(c);
       } catch (e: any) {
-        if (!cancelled) setError(e?.message ?? "Failed to init Nox handle client");
+        if (!cancelled) setError(e?.message ?? "Failed to initialise Nox client");
       } finally {
         if (!cancelled) setLoading(false);
       }
     })();
-    return () => {
-      cancelled = true;
-    };
-  }, [walletClient]);
+    return () => { cancelled = true; };
+  }, [isConnected, chain?.id]);
 
   return { client, loading, error, ready: !!client };
 }
